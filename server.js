@@ -1,6 +1,7 @@
 // Import required modules
 const express = require('express');
 const { MongoClient } = require('mongodb');
+const cors = require('cors'); // Import CORS
 
 // Initialize Express
 const app = express();
@@ -8,6 +9,9 @@ const port = 3000;
 
 // Middleware to parse JSON requests
 app.use(express.json());
+
+// Enable CORS for all routes
+app.use(cors());
 
 // MongoDB connection string
 const uri = 'mongodb+srv://nishant:sirohi123123@listofprofesionals.yabtc.mongodb.net/?retryWrites=true&w=majority&appName=listofprofesionals';
@@ -38,6 +42,11 @@ client.connect()
         console.error('Error adding professional:', error);
         res.status(500).json({ error: 'Internal server error' });
       }
+    });
+
+    // Health check route
+    app.get('/', (req, res) => {
+      res.send('Server is running.');
     });
 
     // Start the server
