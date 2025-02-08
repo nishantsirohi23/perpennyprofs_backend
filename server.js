@@ -1,64 +1,49 @@
+// Import required modules
 const express = require('express');
-const mongoose = require('mongoose');
-const bodyParser = require('body-parser');
+const { MongoClient } = require('mongodb');
 
+// Initialize Express
 const app = express();
-const PORT = 3000;
+const port = 3000;
 
-// MongoDB connection without .env
-mongoose.connect('mongodb+srv://nishant:sirohi123123@listofprofesionals.yabtc.mongodb.net/?retryWrites=true&w=majority&appName=listofprofesionals', {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-  serverSelectionTimeoutMS: 30000, // Increase timeout to 30 seconds
-  keepAlive: true,
-  keepAliveInitialDelay: 300000, // 5 minutes
-})
-  .then(() => console.log('Connected to MongoDB'))
-  .catch((error) => console.error('Connection error:', error));
+// Middleware to parse JSON requests
+app.use(express.json());
 
+// MongoDB connection string
+const uri = 'mongodb+srv://nishant:sirohi123123@listofprofesionals.yabtc.mongodb.net/?retryWrites=true&w=majority&appName=listofprofesionals';
 
-const professionalSchema = new mongoose.Schema({
-  name: { type: String, required: true },
-  phone: { type: String, required: true },
-  email: { type: String, required: true },
-  category: { type: String, required: true },
-  agency: { type: Boolean, required: true },
-  address: { type: String, required: true },
-});
+// MongoDB client
+const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
 
-const Professional = mongoose.model('Professional', professionalSchema);
+// Connect to MongoDB and handle requests
+client.connect()
+  .then(() => {
+    console.log('Connected to MongoDB');
+    const database = client.db('listofprofesionals');
+    const collection = database.collection('professionals');
 
-// Middleware
-app.use(bodyParser.json());
-app.use(express.static('public'));
+    // POST route to add professional details
+    app.post('/professionals', async (req, res) => {
+      try {
+        const professional = req.body;
+        if (!professional.name || !professional.profession) {
+          return res.status(400).json({ error: 'Name and profession are required.' });
+        }
 
-// Routes
-app.post('/submit', async (req, res) => {
-  const { name, phone, email, category, agency, address } = req.body;
+        const result = await collection.insertOne(professional);
+        res.status(201).json({ message: 'Professional added successfully', id: result.insertedId });
+      } catch (error) {
+        console.error('Error adding professional:', error);
+        res.status(500).json({ error: 'Internal server error' });
+      }
+    });
 
-  // Validation for required fields
-  if (!name || !phone || !email || !category || !address || agency === undefined) {
-    return res.status(400).json({ error: 'All fields are required' });
-  }
+    // Start the server
+    app.listen(port, () => {
+      console.log(`Server running at http://localhost:${port}`);
+    });
 
-  try {
-    const professional = new Professional(req.body);
-    await professional.save();
-    res.status(200).json({ message: 'Data saved successfully' });
-  } catch (error) {
-    console.error('Error saving data:', error);
-    res.status(500).json({ error: 'Error saving data' });
-  }
-});
-
-app.get('/success.html', (req, res) => {
-  res.sendFile(__dirname + '/frontend/success.html');
-});
-
-app.get('/failure.html', (req, res) => {
-  res.sendFile(__dirname + '/frontend/failure.html');
-});
-
-app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
-});
+  })
+  .catch(err => {
+    console.error('Failed to connect to MongoDB:', err);
+  });
