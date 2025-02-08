@@ -25,11 +25,13 @@ client.connect()
     // POST route to add professional details
     app.post('/professionals', async (req, res) => {
       try {
-        const professional = req.body;
-        if (!professional.name || !professional.profession) {
-          return res.status(400).json({ error: 'Name and profession are required.' });
+        const { name, phone, email, category, agency, address } = req.body;
+
+        if (!name || !phone || !email || !category || !address) {
+          return res.status(400).json({ error: 'Name, phone, email, category, and address are required.' });
         }
 
+        const professional = { name, phone, email, category, agency: !!agency, address };
         const result = await collection.insertOne(professional);
         res.status(201).json({ message: 'Professional added successfully', id: result.insertedId });
       } catch (error) {
