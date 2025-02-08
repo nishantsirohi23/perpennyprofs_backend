@@ -9,11 +9,13 @@ const PORT = 3000;
 mongoose.connect('mongodb+srv://nishant:sirohi123123@listofprofesionals.yabtc.mongodb.net/?retryWrites=true&w=majority&appName=listofprofesionals', {
   useNewUrlParser: true,
   useUnifiedTopology: true,
-}).then(() => {
-  console.log('Connected to MongoDB');
-}).catch(err => {
-  console.error('Error connecting to MongoDB:', err);
-});
+  serverSelectionTimeoutMS: 30000, // Increase timeout to 30 seconds
+  keepAlive: true,
+  keepAliveInitialDelay: 300000, // 5 minutes
+})
+  .then(() => console.log('Connected to MongoDB'))
+  .catch((error) => console.error('Connection error:', error));
+
 
 const professionalSchema = new mongoose.Schema({
   name: { type: String, required: true },
